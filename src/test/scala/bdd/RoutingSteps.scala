@@ -49,7 +49,6 @@ class Routing extends ScalaDsl with EN with ShouldMatchers {
 		val listener = new DummyAgentConnectionListener()
 		agentPhoneListener = new TestPhoneListener("AGENT")
 		val phone = new Phone(baseConfig, new Logger(null), agentPhoneListener)
-		println("phone assigned to agent " + phone)
 		
 		agent = new AgentWebConnection(agentId, password, listener, phone,
 			loginURI, conURI, exec)	  
