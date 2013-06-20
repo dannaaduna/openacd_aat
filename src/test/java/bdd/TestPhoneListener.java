@@ -7,7 +7,7 @@ import com.ezuce.oacdlt.*;
 public class TestPhoneListener implements PhoneListener {
 	
 	private String type = null;
-	private String caller = null;
+	private boolean hasRung = false;
 	
 	public TestPhoneListener(String type) {
 		this.type = type;
@@ -17,14 +17,14 @@ public class TestPhoneListener implements PhoneListener {
 		return type;
 	}
 	
-	public String getCaller() {
-		return caller;
+	public boolean hasRung() {
+		return hasRung;
 	}
 
 	@Override
 	public void onIncomingCall(Phone phone) {
 		phone.answer();
-		caller = phone.getUser();
+		hasRung = true;
 	}
 
 	@Override
