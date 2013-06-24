@@ -3,24 +3,8 @@ package bdd
 import cucumber.api.scala.{ScalaDsl, EN}
 import org.scalatest.matchers.ShouldMatchers
 
-import java.net._
-import net.sourceforge.peers._
-
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.ScheduledExecutorService
-
-import net.sourceforge.peers.JavaConfig
-import net.sourceforge.peers.media.MediaMode
-import net.sourceforge.peers.sip.syntaxencoding.SipURI
-import net.sourceforge.peers.sip.transport.SipResponse
-
-import org.apache.commons.configuration.Configuration
-
-import com.ezuce.oacdlt._
-
 class Routing extends ScalaDsl with EN with ShouldMatchers {
-	
+
 	var agent : TestAgent = null
 	var caller : TestCaller = null
 
@@ -34,21 +18,35 @@ class Routing extends ScalaDsl with EN with ShouldMatchers {
 		agent.loginAndGoAvailable()
 	}
 
+	When("""^agent (\d+) goes released$"""){ (agentId:Int) =>
+		agent.goReleased()
+	}
+
 	When("""^caller (\d+) calls line (\d+)$"""){ (callerId:Int, line:Int) =>
 		caller = TestManager.createCaller(callerId)
 		caller.callLine(line)
 	}
-	
-	Then("""^agent (\d+)'s phone does not ring$"""){ (agentId:Int) =>
-		Thread.sleep(2000)
-		assert(agent.phoneHasRung() === false)
+
+	When("""^caller (\d+) hangs up$"""){ (callerId:Int) =>
 		caller.hangUp()
+		agent.endWrapup()
 	}
 
-	Then("""^agent (\d+)'s phone rings$"""){ (agentId:Int) =>
+	Then("""^agent (\d+)`s phone does not ring$"""){ (agentId:Int) =>
 		Thread.sleep(2000)
+		assert(agent.phoneHasRung() === false)
+	}
 
+	Then("""^agent (\d+)`s phone rings$"""){ (agentId:Int) =>
+		Thread.sleep(2000)
 		assert(agent.phoneHasRung())
+	}
+
+	After() {
 		caller.hangUp()
+		agent.disconnect()
+
+		agent = null
+		caller = null
 	}
 }

@@ -1,13 +1,14 @@
 package bdd
 
-import java.net._
-import net.sourceforge.peers._
+import java.net.URI
+import java.net.InetAddress
 
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.ScheduledExecutorService
 
 import net.sourceforge.peers.JavaConfig
+import net.sourceforge.peers.Logger
 import net.sourceforge.peers.media.MediaMode
 import net.sourceforge.peers.sip.syntaxencoding.SipURI
 import net.sourceforge.peers.sip.transport.SipResponse
@@ -19,6 +20,7 @@ import com.ezuce.oacdlt._
 object TestManager {
 
 	def exec = Executors.newScheduledThreadPool(10)
+	val agents : Array[TestAgent] = null
 
 	def getBaseConfig(username : Int) : JavaConfig = {
 		val baseConfig = new JavaConfig()
@@ -48,11 +50,11 @@ object TestManager {
 	def createCaller(username : Int) : TestCaller = {
 		new TestCaller(username)
 	}
-
 }
 
 class TestAgent(username : Int) {
 	var connection : AgentWebConnection = null
+	var phone : Phone = null
 	var phoneListener : TestPhoneListener = null
 
 	def login() {
@@ -62,9 +64,11 @@ class TestAgent(username : Int) {
 		
 		val listener = new DummyAgentConnectionListener()
 		phoneListener = new TestPhoneListener("AGENT")
-		val phone = new Phone(TestManager.getBaseConfig(username), new Logger(null), phoneListener)
+		val phone = new Phone(TestManager.getBaseConfig(username),
+			new Logger(null), phoneListener)
 
-		connection = new AgentWebConnection(username.toString(), password, listener, phone, loginURI, conURI, TestManager.exec)
+		connection = new AgentWebConnection(username.toString(), password,
+			listener, phone, loginURI, conURI, TestManager.exec)
 	
 		connection.connect()
 		connection.getPhone().register()
@@ -75,21 +79,38 @@ class TestAgent(username : Int) {
 		val loginURI = URI.create("http://oacddev.ezuce.com:8936/login")
 		val conURI = URI.create("ws://oacddev.ezuce.com:8936/wsock")
 		
-		val listener = new DummyAgentConnectionListener()
+		val listener = new TestAgentConnectionListener()
 		phoneListener = new TestPhoneListener("AGENT")
-		val phone = new Phone(TestManager.getBaseConfig(username), new Logger(null), phoneListener)
+		phone = new Phone(TestManager.getBaseConfig(username), new Logger(null),
+			phoneListener)
 
-		connection = new AgentWebConnection(username.toString(), password, listener, phone, loginURI, conURI, TestManager.exec)
+		connection = new AgentWebConnection(username.toString(), password,
+			listener, phone, loginURI, conURI, TestManager.exec)
 	
 		connection.connect()
 		connection.getPhone().register()
 		connection.goAvailable()
 	}
 
+	def goAvailable() {
+		connection.goAvailable()
+	}
+
+	def goReleased() {
+		connection.goReleased()
+	}
+
 	def phoneHasRung() : Boolean = {
 		phoneListener.hasRung()
 	}
 
+	def endWrapup() {
+		connection.endWrapup()
+	}
+
+	def disconnect() {
+		connection.disconnect()
+	}
 
 }
 
@@ -99,7 +120,9 @@ class TestCaller(username : Int) {
 
 	def callLine(line : Int) {		
 		val phoneListener = new TestPhoneListener("CALLER")
-		phone = new Phone(TestManager.getBaseConfig(username), new Logger(null), phoneListener)
+		phone = new Phone(TestManager.getBaseConfig(username),
+			new Logger(null), phoneListener)
+		phone.register()
 
 		phone.dial(line.toString())
 	}
@@ -107,4 +130,5 @@ class TestCaller(username : Int) {
 	def hangUp() {
 		phone.hangUp()
 	}
+
 }

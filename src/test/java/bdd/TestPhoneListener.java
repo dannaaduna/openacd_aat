@@ -18,7 +18,9 @@ public class TestPhoneListener implements PhoneListener {
 	}
 	
 	public boolean hasRung() {
-		return hasRung;
+		boolean response = hasRung;
+		hasRung = false;
+		return response;
 	}
 
 	@Override
