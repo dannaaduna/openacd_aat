@@ -32,6 +32,12 @@ class Routing extends ScalaDsl with EN with ShouldMatchers {
 		agent.endWrapup()
 	}
 
+	When("""^agent (\d+) answers the call$"""){ (agentId:Int) =>
+		Thread.sleep(2000)
+		assert(agent.phoneHasRung())
+		agent.answer()
+	}
+
 	Then("""^agent (\d+)`s phone does not ring$"""){ (agentId:Int) =>
 		Thread.sleep(2000)
 		assert(agent.phoneHasRung() === false)
@@ -40,10 +46,12 @@ class Routing extends ScalaDsl with EN with ShouldMatchers {
 	Then("""^agent (\d+)`s phone rings$"""){ (agentId:Int) =>
 		Thread.sleep(2000)
 		assert(agent.phoneHasRung())
+		agent.answer()
 	}
 
 	After() {
 		caller.hangUp()
+		agent.endWrapup()
 		agent.disconnect()
 
 		agent = null

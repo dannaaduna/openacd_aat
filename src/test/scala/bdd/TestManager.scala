@@ -112,6 +112,10 @@ class TestAgent(username : Int) {
 		connection.disconnect()
 	}
 
+	def answer() {
+		phone.answer()
+	}
+
 }
 
 class TestCaller(username : Int) {

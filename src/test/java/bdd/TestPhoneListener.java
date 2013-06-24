@@ -25,7 +25,7 @@ public class TestPhoneListener implements PhoneListener {
 
 	@Override
 	public void onIncomingCall(Phone phone) {
-		phone.answer();
+		// phone.answer();
 		hasRung = true;
 	}
 
