@@ -22,7 +22,6 @@ import com.ezuce.oacdlt._
 object TestManager {
 
 	def exec = Executors.newScheduledThreadPool(10)
-	// def exec = Executors.newCachedThreadPool()
 	val agents : Array[TestAgent] = null
 
 	def getBaseConfig(username : Int) : JavaConfig = {
@@ -67,23 +66,6 @@ class TestAgent(username : Int) {
 		val loginURI = URI.create("http://oacddev.ezuce.com:8936/login")
 		val conURI = URI.create("ws://oacddev.ezuce.com:8936/wsock")
 		
-		val listener = new DummyAgentConnectionListener()
-		phoneListener = new TestPhoneListener(ringSignal)
-		val phone = new Phone(TestManager.getBaseConfig(username),
-			new Logger(null), phoneListener)
-
-		connection = new AgentWebConnection(username.toString(), password,
-			listener, phone, loginURI, conURI, TestManager.exec)
-	
-		connection.connect()
-		connection.getPhone().register()
-	}
-
-	def loginAndGoAvailable() {
-		val password = "password"
-		val loginURI = URI.create("http://oacddev.ezuce.com:8936/login")
-		val conURI = URI.create("ws://oacddev.ezuce.com:8936/wsock")
-		
 		val listener = new TestAgentConnectionListener()
 		phoneListener = new TestPhoneListener(ringSignal)
 		phone = new Phone(TestManager.getBaseConfig(username), new Logger(null),
@@ -94,7 +76,6 @@ class TestAgent(username : Int) {
 	
 		connection.connect()
 		connection.getPhone().register()
-		connection.goAvailable()
 	}
 
 	def goAvailable() {
@@ -103,6 +84,11 @@ class TestAgent(username : Int) {
 
 	def goReleased() {
 		connection.goReleased()
+	}
+
+	def loginAndGoAvailable() {
+		login()
+		goAvailable()
 	}
 
 	def phoneHasRung() : Boolean = {
@@ -116,6 +102,15 @@ class TestAgent(username : Int) {
 		phoneListener.resetRingSignal(ringSignal)
 	}
 
+	def answer() {
+		isOncall = true
+		phone.answer()
+	}
+
+	def reject() {
+		phone.hangUp()
+	}
+	
 	def endWrapup() {
 		isOncall = false
 		connection.endWrapup()
@@ -124,15 +119,6 @@ class TestAgent(username : Int) {
 	def disconnect() {
 		if (isOncall) connection.endWrapup()
 		if (connection !=  null) connection.disconnect()
-	}
-
-	def answer() {
-		isOncall = true
-		phone.answer()
-	}
-
-	def reject() {
-		phone.hangUp()
 	}
 
 }

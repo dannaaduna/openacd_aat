@@ -20,12 +20,12 @@ class Routing extends ScalaDsl with EN with ShouldMatchers {
 		}
 	}
 
-	When("""^agent (\d+) logs in$"""){ (agentId:Int) =>
-		agents(agentId).login()
+	When("""^agent (\d+) logs in$"""){ (id:Int) =>
+		agents(id).login()
 	}
 
-	When("""^agent (\d+) logs in and goes available$"""){ (agentId:Int) =>
-		agents(agentId).loginAndGoAvailable()
+	When("""^agent (\d+) logs in and goes available$"""){ (id:Int) =>
+		agents(id).loginAndGoAvailable()
 	}
 
 	When("""^agents (\d+) and (\d+) log in and go available$"""){ 
@@ -34,34 +34,34 @@ class Routing extends ScalaDsl with EN with ShouldMatchers {
 		agents(id2).loginAndGoAvailable()
 	}
 
-	When("""^agent (\d+) goes released$"""){ (agentId:Int) =>
-		agents(agentId).goReleased()
+	When("""^agent (\d+) goes released$"""){ (id:Int) =>
+		agents(id).goReleased()
 	}
 
-	When("""^caller (\d+) calls line (\d+)$"""){ (callerId:Int, line:Int) =>
-		caller = TestManager.createCaller(callerId)
+	When("""^caller (\d+) calls line (\d+)$"""){ (id:Int, line:Int) =>
+		caller = TestManager.createCaller(id)
 		caller.callLine(line)
 	}
 
-	When("""^caller (\d+) hangs up$"""){ (callerId:Int) =>
+	When("""^caller (\d+) hangs up$"""){ (id:Int) =>
 		caller.hangUp()
 	}
 
-	When("""^agent (\d+) wraps up$"""){ (agentId:Int) =>
-		agents(agentId).endWrapup()
+	When("""^agent (\d+) wraps up$"""){ (id:Int) =>
+		agents(id).endWrapup()
 	}
 
-	When("""^agent (\d+) answers the call$"""){ (agentId:Int) =>
-		assert(agents(agentId).phoneHasRung())
-		agents(agentId).answer()
+	When("""^agent (\d+) answers the call$"""){ (id:Int) =>
+		assert(agents(id).phoneHasRung())
+		agents(id).answer()
 	}
 
 	When("""^the first agent rejects the call$"""){ () =>
 		firstAgent.reject()
 	}
 
-	Then("""^agent (\d+)`s phone does not ring$"""){ (agentId:Int) =>
-		assert(agents(agentId).phoneHasRung() === false)
+	Then("""^agent (\d+)`s phone does not ring$"""){ (id:Int) =>
+		assert(agents(id).phoneHasRung() === false)
 	}
 
 	Then("""^the second agent`s phone rings$"""){ () =>
@@ -83,8 +83,8 @@ class Routing extends ScalaDsl with EN with ShouldMatchers {
 	 	}
 	}
 
-	Then("""^agent (\d+)`s phone rings$"""){ (agentId:Int) =>
-		assert(agents(agentId).phoneHasRung())
+	Then("""^agent (\d+)`s phone rings$"""){ (id:Int) =>
+		assert(agents(id).phoneHasRung())
 	}
 
 	After() {
