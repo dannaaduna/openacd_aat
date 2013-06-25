@@ -6,6 +6,8 @@ import java.net.InetAddress
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 import net.sourceforge.peers.JavaConfig
 import net.sourceforge.peers.Logger
@@ -20,6 +22,7 @@ import com.ezuce.oacdlt._
 object TestManager {
 
 	def exec = Executors.newScheduledThreadPool(10)
+	// def exec = Executors.newCachedThreadPool()
 	val agents : Array[TestAgent] = null
 
 	def getBaseConfig(username : Int) : JavaConfig = {
@@ -56,6 +59,8 @@ class TestAgent(username : Int) {
 	var connection : AgentWebConnection = null
 	var phone : Phone = null
 	var phoneListener : TestPhoneListener = null
+	var ringSignal : CountDownLatch = new CountDownLatch(1)
+	var isOncall = false
 
 	def login() {
 		val password = "password"
@@ -63,7 +68,7 @@ class TestAgent(username : Int) {
 		val conURI = URI.create("ws://oacddev.ezuce.com:8936/wsock")
 		
 		val listener = new DummyAgentConnectionListener()
-		phoneListener = new TestPhoneListener("AGENT")
+		phoneListener = new TestPhoneListener(ringSignal)
 		val phone = new Phone(TestManager.getBaseConfig(username),
 			new Logger(null), phoneListener)
 
@@ -80,7 +85,7 @@ class TestAgent(username : Int) {
 		val conURI = URI.create("ws://oacddev.ezuce.com:8936/wsock")
 		
 		val listener = new TestAgentConnectionListener()
-		phoneListener = new TestPhoneListener("AGENT")
+		phoneListener = new TestPhoneListener(ringSignal)
 		phone = new Phone(TestManager.getBaseConfig(username), new Logger(null),
 			phoneListener)
 
@@ -101,19 +106,33 @@ class TestAgent(username : Int) {
 	}
 
 	def phoneHasRung() : Boolean = {
-		phoneListener.hasRung()
+		val hasRung = ringSignal.await(2, TimeUnit.SECONDS)
+		resetRingSignal()
+		hasRung
+	}
+
+	def resetRingSignal() {
+		ringSignal = new CountDownLatch(1)
+		phoneListener.resetRingSignal(ringSignal)
 	}
 
 	def endWrapup() {
+		isOncall = false
 		connection.endWrapup()
 	}
 
 	def disconnect() {
-		connection.disconnect()
+		if (isOncall) connection.endWrapup()
+		if (connection !=  null) connection.disconnect()
 	}
 
 	def answer() {
+		isOncall = true
 		phone.answer()
+	}
+
+	def reject() {
+		phone.hangUp()
 	}
 
 }
@@ -123,7 +142,7 @@ class TestCaller(username : Int) {
 	var phone : Phone = null;
 
 	def callLine(line : Int) {		
-		val phoneListener = new TestPhoneListener("CALLER")
+		val phoneListener = new TestPhoneListener()
 		phone = new Phone(TestManager.getBaseConfig(username),
 			new Logger(null), phoneListener)
 		phone.register()

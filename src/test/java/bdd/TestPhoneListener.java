@@ -1,32 +1,29 @@
 package bdd;
 
+import java.util.concurrent.CountDownLatch;
 import net.sourceforge.peers.sip.transport.SipResponse;
 
 import com.ezuce.oacdlt.*;
 
 public class TestPhoneListener implements PhoneListener {
 	
-	private String type = null;
-	private boolean hasRung = false;
+	private CountDownLatch ringSignal;
 	
-	public TestPhoneListener(String type) {
-		this.type = type;
-	}
-	
-	public String getType() {
-		return type;
-	}
-	
-	public boolean hasRung() {
-		boolean response = hasRung;
-		hasRung = false;
-		return response;
+	public TestPhoneListener() {
+		ringSignal = null;	
 	}
 
+	public TestPhoneListener(CountDownLatch ringSignal) {
+		this.ringSignal = ringSignal;
+	}
+	
+	public void resetRingSignal(CountDownLatch ringSignal) {
+		this.ringSignal = ringSignal;
+	}
+	
 	@Override
 	public void onIncomingCall(Phone phone) {
-		// phone.answer();
-		hasRung = true;
+		if (ringSignal != null) ringSignal.countDown();
 	}
 
 	@Override
