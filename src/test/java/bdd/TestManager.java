@@ -25,13 +25,22 @@ import java.util.concurrent.TimeUnit;
 public class TestManager {
 
     public static ScheduledExecutorService exec = Executors.newScheduledThreadPool(10);
+    public static String sipxDomain;
+    public static URI loginUri;
+    public static URI connUri;
+
+    public static void setUp(String domain) {
+        sipxDomain = domain;
+        loginUri = URI.create("http://" + domain + "/openacd/login");
+        connUri = URI.create("ws://" + domain + ":8936/wsock");
+    }
 
     public static JavaConfig getBaseConfig(int username) {
         JavaConfig baseConfig = new JavaConfig();
         try {
 
-            String sipDomain = "ezuce.com";
-            String sipProxy = "oacddev.ezuce.com";
+            String sipDomain = sipxDomain;
+            String sipProxy = sipxDomain;
             SipURI sipProxyUri = new SipURI(sipProxy.startsWith("sip:") ? sipProxy : "sip:" + sipProxy);
             String sipLocalInetAddress = "10.24.7.1";
 
@@ -75,8 +84,6 @@ class TestAgent {
 
     public void login() {
         String password = "password";
-        URI loginUri = URI.create("http://oacddev.ezuce.com:8936/login");
-        URI connURI = URI.create("ws://oacddev.ezuce.com:8936/wsock");
 
         phoneListener = new PhoneListener() {
             @Override
@@ -103,7 +110,7 @@ class TestAgent {
         phone = new Phone(TestManager.getBaseConfig(username), logger, phoneListener);
 
         AgentConnectionListener listener = new DummyAgentConnectionListener();
-        connection = new AgentWebConnection(Integer.toString(username), password, listener, phone, loginUri, connURI, TestManager.exec);
+        connection = new AgentWebConnection(Integer.toString(username), password, listener, phone, TestManager.loginUri, TestManager.connUri, TestManager.exec);
 
         connection.connect();
         connection.getPhone().register();
@@ -178,7 +185,7 @@ class TestCaller {
 
             @Override
             public void onRemoteHangup(Phone phone) {
-
+                onCall = false;
             }
 
             @Override
