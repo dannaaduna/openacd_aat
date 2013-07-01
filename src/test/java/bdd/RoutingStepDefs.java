@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
  * Time: 2:52 PM
  */
 public class RoutingStepDefs {
+    private static final String domain = "openucrpm.ezuce.ph";
     private final Logger logger = LoggerFactory
             .getLogger(RoutingStepDefs.class);
 
@@ -37,9 +38,11 @@ public class RoutingStepDefs {
         try {
             setup = new SimpleOpenACDSetUp(new File(
                     "/Users/danna/dev/openuc-stable-rpm"),
-                    "openucrpm.ezuce.ph",
+                    domain,
                     "password",
-                    new URL("https://openucrpm.ezuce.ph/"));
+                    new URL("https://" + domain + "/"));
+            setup.setResetSipxEnabled(false);
+
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -48,8 +51,7 @@ public class RoutingStepDefs {
     @Before
     public void do_before() {
         isSetUp = true;
-        TestManager.setUp("openucrpm.ezuce.ph");
-        logger.info("Running before scenario");
+        TestManager.setUp(domain);
     }
 
     @After
@@ -62,14 +64,16 @@ public class RoutingStepDefs {
         for (TestCaller caller : callers.values()) {
             caller.hangUp();
         }
+        agents = null;
+        callers = null;
     }
 
     @Given("^the agents:$")
-    public void these_agents(List<ConfigAgent> configAgents) throws Throwable {
+    public void given_agents(List<ConfigAgent> configAgents) throws Throwable {
         System.out.println("Given these agents");
         for (ConfigAgent a : configAgents) {
             TestAgent agent = new TestAgent(a.login);
-            String[] skills = a.skills.split(", *");
+            String[] skills = toStrArray(a.agentSkills);
 
             agents.put(a.name, agent);
             setup.addAgent(Integer.toString(a.login), a.group, AgentSecurity.valueOf(a.securityLevel.toUpperCase()), skills);
@@ -78,15 +82,15 @@ public class RoutingStepDefs {
     }
 
     @Given("^the queues:$")
-    public void these_queues(List<ConfigQueue> configQueues) throws Throwable {
+    public void given_queues(List<ConfigQueue> configQueues) throws Throwable {
         for (ConfigQueue q : configQueues) {
-            String[] skills = q.skills.split(", *");
+            String[] skills = toStrArray(q.queueSkills);
             setup.addClientQueueLine(q.client, q.name, Integer.toString(q.line), q.group, skills);
         }
     }
 
     @Given("^the callers (\\d+)-(\\d+)$")
-    public void callers_(int callerFrom, int callerTo) throws Throwable {
+    public void given_callers(int callerFrom, int callerTo) throws Throwable {
         for (int i = callerFrom; i <= callerTo; i++) {
             callers.put(i, new TestCaller(i));
             setup.addCaller(Integer.toString(i));
@@ -150,11 +154,34 @@ public class RoutingStepDefs {
         agents.get(name).goAvailable();
     }
 
+    @Given("^the agent groups:$")
+    public void given_agent_groups(List<ConfigGroup> agentGroups) throws Throwable {
+        for (ConfigGroup group : agentGroups) {
+            String[] skills = toStrArray(group.skills);
+
+            setup.addAgentGroup(group.name, skills);
+        }
+    }
+
+    @Given("^the queue groups:$")
+    public void given_queue_groups(List<ConfigGroup> queueGroups) throws Throwable {
+        for (ConfigGroup group : queueGroups) {
+            String[] skills = toStrArray(group.skills);
+
+            setup.addQueueGroup(group.name, skills);
+        }
+    }
+
+    public static class ConfigGroup {
+        String name;
+        String skills;
+    }
+
     public static class ConfigAgent {
         String name;
         int login;
         String group;
-        String skills;
+        String agentSkills;
         String securityLevel;
     }
 
@@ -163,13 +190,23 @@ public class RoutingStepDefs {
         String client;
         int line;
         String group;
-        String skills;
+        String queueSkills;
     }
 
-    private void trySetup() {
+    private void trySetup() throws Exception {
         if (!isSetUp) {
             setup.setUp();
+            Thread.sleep(60000);
             isSetUp = true;
+        }
+    }
+
+    private String[] toStrArray(String commaSepStr) {
+        if (!commaSepStr.equals("")) {
+            return commaSepStr.split(", *");
+        }
+        else {
+            return new String[0];
         }
     }
 
