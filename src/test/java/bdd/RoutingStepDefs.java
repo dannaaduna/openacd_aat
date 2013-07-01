@@ -1,15 +1,10 @@
 package bdd;
 
 import com.ezuce.openuc.tester.setup.SimpleOpenACDSetUp;
-import com.ezuce.openuc.tester.setup.SipxconfigController;
-import com.ezuce.openuc.tester.setup.SipxecsController;
 import com.ezuce.openuc.tester.setup.model.AgentSecurity;
-import cucumber.annotation.After;
-import cucumber.annotation.Before;
-import cucumber.annotation.en.And;
-import cucumber.annotation.en.Given;
-import cucumber.annotation.en.Then;
-import cucumber.annotation.en.When;
+import cucumber.api.java.*;
+import cucumber.api.java.en.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,15 +45,11 @@ public class RoutingStepDefs {
         }
     }
 
-    public RoutingStepDefs() throws Throwable {
-        logger.info("Starting up RoutingStepDefs");
-        TestManager.setUp("openucrpm.ezuce.ph");
-    }
-
     @Before
     public void do_before() {
-        logger.info("Running before scenario: setting isSetup to false");
         isSetUp = true;
+        TestManager.setUp("openucrpm.ezuce.ph");
+        logger.info("Running before scenario");
     }
 
     @After
