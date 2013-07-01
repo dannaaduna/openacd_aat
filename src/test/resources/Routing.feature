@@ -93,12 +93,13 @@ Feature: Routing
     And caller 208 calls line 90
     Then Abed's phone does not ring
 
-#  Scenario: Rejected call is routed to another qualified agent
-#    When agents 1104 and 1105 log in and go available
-#    And caller 206 calls line 98
-#    Then either agent 1104 or 1105`s phone rings
-#    When the first agent rejects the call
-#    Then the second agent`s phone rings
+  Scenario: Rejected call is routed to another qualified agent
+    When Jeff logs in and goes available
+    And caller 211 calls line 90
+    Then Jeff's phone rings
+    When Jeff rejects the call
+    And Annie logs in and goes available
+    Then Annie's phone rings
 
 #  Inheritance of group skills
 

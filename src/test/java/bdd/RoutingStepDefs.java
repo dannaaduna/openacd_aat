@@ -5,6 +5,7 @@ import com.ezuce.openuc.tester.setup.model.AgentSecurity;
 import cucumber.api.java.*;
 import cucumber.api.java.en.*;
 
+import cucumber.runtime.PendingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,9 @@ public class RoutingStepDefs {
 
     private HashMap<String, TestAgent> agents = new HashMap<String, TestAgent>();
     private HashMap<Integer, TestCaller> callers = new HashMap<Integer, TestCaller>();
+
+    private String firstAgent;
+    private String secondAgent;
 
     static {
         try {
@@ -97,6 +101,13 @@ public class RoutingStepDefs {
         }
     }
 
+    @When("^(\\w+) and (\\w+) log in and go available$")
+    public void two_agents_log_in_and_go_available(String name1, String name2) throws Throwable {
+        trySetup();
+        agents.get(name1).loginAndGoAvailable();
+        agents.get(name2).loginAndGoAvailable();
+    }
+
     @When("^(\\w+) logs in$")
     public void agent_logs_in(String name) throws Throwable {
         trySetup();
@@ -118,6 +129,26 @@ public class RoutingStepDefs {
     @Then("^(\\w+)'s phone does not ring.*$")
     public void agent_s_phone_does_not_ring(String name) throws Throwable {
         assertFalse(agents.get(name).phoneHasRung());
+    }
+
+    @Then("^either (\\w+) or (\\w+)'s phone rings$")
+    public void either_phone_rings(String name1, String name2) throws Throwable {
+        boolean hasRung1 = agents.get(name1).phoneHasRung();
+        boolean hasRung2 = agents.get(name2).phoneHasRung();
+        assertTrue(hasRung1 ^ hasRung2);
+        if (hasRung1) {
+            firstAgent = name1;
+            secondAgent = name2;
+        }
+        else {
+            firstAgent = name2;
+            secondAgent = name1;
+        }
+    }
+
+    @Then("^the second agent's phone rings$")
+    public void second_agent_s_phone_rings() throws Throwable {
+        assertTrue(agents.get(secondAgent).phoneHasRung());
     }
 
     @Then("^(\\w+)'s phone rings$")
@@ -170,6 +201,16 @@ public class RoutingStepDefs {
 
             setup.addQueueGroup(group.name, skills);
         }
+    }
+
+    @When("^the first agent rejects the call$")
+    public void first_agent_rejects_the_call() throws Throwable {
+        agents.get(firstAgent).reject();
+    }
+
+    @When("^(\\w+) rejects the call$")
+    public void agent_rejects_the_call(String name) throws Throwable {
+        agents.get(name).reject();
     }
 
     public static class ConfigGroup {
