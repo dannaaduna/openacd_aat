@@ -41,7 +41,7 @@ public class RoutingStepDefs {
                     domain,
                     "password",
                     new URL("https://" + domain + "/"));
-            setup.setResetSipxEnabled(false);
+            setup.setResetSipxEnabled(true);
 
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -50,7 +50,7 @@ public class RoutingStepDefs {
 
     @Before
     public void do_before() {
-        isSetUp = true;
+        isSetUp = false;
         TestManager.setUp(domain);
     }
 
@@ -202,7 +202,7 @@ public class RoutingStepDefs {
     }
 
     private String[] toStrArray(String commaSepStr) {
-        if (!commaSepStr.equals("")) {
+        if (!commaSepStr.isEmpty()) {
             return commaSepStr.split(", *");
         }
         else {
