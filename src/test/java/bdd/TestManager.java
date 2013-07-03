@@ -1,214 +1,66 @@
 package bdd;
 
-import com.ezuce.oacdlt.*;
-import net.sourceforge.peers.JavaConfig;
-import net.sourceforge.peers.Logger;
-import net.sourceforge.peers.media.MediaMode;
-import net.sourceforge.peers.sip.syntaxencoding.SipURI;
-import net.sourceforge.peers.sip.syntaxencoding.SipUriSyntaxException;
-import net.sourceforge.peers.sip.transport.SipResponse;
-
 import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+
+import net.sourceforge.peers.JavaConfig;
+import net.sourceforge.peers.media.MediaMode;
+import net.sourceforge.peers.sip.syntaxencoding.SipURI;
 
 /**
- * Created with IntelliJ IDEA.
- * User: danna
- * Date: 6/26/13
- * Time: 5:46 PM
+ * Created with IntelliJ IDEA. User: danna Date: 6/26/13 Time: 5:46 PM
  */
 public class TestManager {
 
-    public static ScheduledExecutorService exec = Executors.newScheduledThreadPool(10);
-    public static String sipxDomain;
-    public static URI loginUri;
-    public static URI connUri;
+	private final static TestManager INSTANCE = new TestManager();
 
-    public static void setUp(String domain) {
-        sipxDomain = domain;
-        loginUri = URI.create("http://" + domain + "/openacd/login");
-        connUri = URI.create("ws://" + domain + ":8936/wsock");
-    }
+	public static TestManager getInstance() {
+		return INSTANCE;
+	}
 
-    public static JavaConfig getBaseConfig(int username) {
-        JavaConfig baseConfig = new JavaConfig();
-        try {
 
-            String sipDomain = sipxDomain;
-            String sipProxy = sipxDomain;
-            SipURI sipProxyUri = new SipURI(sipProxy.startsWith("sip:") ? sipProxy : "sip:" + sipProxy);
-            String sipLocalInetAddress = "10.24.7.1";
+	public ScheduledExecutorService exec = Executors
+			.newScheduledThreadPool(10);
+	private String sipxDomain;
+	private URI loginUri;
 
-            baseConfig.setDomain(sipDomain);
-            baseConfig.setOutboundProxy(sipProxyUri);
-            baseConfig.setLocalInetAddress(InetAddress.getByName(sipLocalInetAddress));
-            baseConfig.setPublicInetAddress(baseConfig.getLocalInetAddress());
-            baseConfig.setMediaMode(MediaMode.none);
-            baseConfig.setUserPart(Integer.toString(username));
-            baseConfig.setPassword("1234");
-        }
-        catch (UnknownHostException e) {
+	
+	public void setUp(String domain) {
+		this.sipxDomain = domain;
+		this.loginUri = URI.create("http://" + domain + "/openacd/login");
+	}
 
-        }
-        catch (SipUriSyntaxException e) {
+	public JavaConfig getBaseConfig(int username) {
+		JavaConfig baseConfig = new JavaConfig();
+		try {
+			String sipDomain = sipxDomain;
+			String sipProxy = sipxDomain;
+			SipURI sipProxyUri = new SipURI(
+					sipProxy.startsWith("sip:") ? sipProxy : "sip:" + sipProxy);
+			String sipLocalInetAddress = "10.24.7.1";
 
-        }
-        return baseConfig;
-    }
+			baseConfig.setDomain(sipDomain);
+			baseConfig.setOutboundProxy(sipProxyUri);
+			baseConfig.setLocalInetAddress(InetAddress
+					.getByName(sipLocalInetAddress));
+			baseConfig.setPublicInetAddress(baseConfig.getLocalInetAddress());
+			baseConfig.setMediaMode(MediaMode.none);
+			baseConfig.setUserPart(Integer.toString(username));
+			baseConfig.setPassword("1234");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return baseConfig;
+	}
 
-    public static TestAgent createAgent(int username) {
-        return new TestAgent(username);
-    }
-
-}
-
-class TestAgent {
-
-    int username;
-    AgentWebConnection connection;
-    Phone phone;
-    PhoneListener phoneListener;
-    CountDownLatch ringSignal;
-    boolean isOncall = false;
-
-    public TestAgent(int username) {
-        this.username = username;
-        ringSignal = new CountDownLatch(1);
-
-    }
-
-    public void login() {
-        String password = "password";
-
-        phoneListener = new PhoneListener() {
-            @Override
-            public void onIncomingCall(Phone phone) {
-                ringSignal.countDown();
-            }
-
-            @Override
-            public void onRemoteHangup(Phone phone) {
-
-            }
-
-            @Override
-            public void onPickup(Phone phone) {
-
-            }
-
-            @Override
-            public void onError(Phone phone, SipResponse sipResponse) {
-
-            }
-        };
-        Logger logger = new Logger(null);
-        phone = new Phone(TestManager.getBaseConfig(username), logger, phoneListener);
-
-        AgentConnectionListener listener = new DummyAgentConnectionListener();
-        connection = new AgentWebConnection(Integer.toString(username), password, listener, phone, TestManager.loginUri, TestManager.connUri, TestManager.exec);
-
-        connection.connect();
-        connection.getPhone().register();
-
-    }
-
-    public void goAvailable() {
-        connection.goAvailable();
-    }
-
-    public void loginAndGoAvailable() {
-        login();
-        goAvailable();
-    }
-
-    public void goReleased() {
-        connection.goReleased();
-    }
-
-    public boolean phoneHasRung() {
-        boolean hasRung;
-        try {
-            hasRung = ringSignal.await(2, TimeUnit.SECONDS);
-        }
-        catch (InterruptedException e) {
-            hasRung = false;
-        }
-        resetRingSignal();
-        return hasRung;
-    }
-
-    public void answer() {
-        isOncall = true;
-        phone.answer();
-    }
-
-    public void reject() {
-        phone.hangUp();
-    }
-
-    public void wrapUp() {
-        isOncall = false;
-        connection.endWrapup();
-    }
-
-    public void disconnect() {
-        if (isOncall) connection.endWrapup();
-        if (connection !=  null) connection.disconnect();
-    }
-
-    private void resetRingSignal() {
-        ringSignal = new CountDownLatch(1);
-    }
-}
-
-class TestCaller {
-
-    Phone phone;
-    int username;
-    boolean onCall = false;
-
-    public TestCaller(int username) {
-        this.username = username;
-    }
-
-    public void callLine(int line) {
-        PhoneListener phoneListener = new PhoneListener() {
-            @Override
-            public void onIncomingCall(Phone phone) {
-
-            }
-
-            @Override
-            public void onRemoteHangup(Phone phone) {
-                onCall = false;
-            }
-
-            @Override
-            public void onPickup(Phone phone) {
-
-            }
-
-            @Override
-            public void onError(Phone phone, SipResponse sipResponse) {
-
-            }
-        };
-        Logger logger = new Logger(null);
-        phone = new Phone(TestManager.getBaseConfig(username), logger, phoneListener);
-        phone.register();
-        onCall = true;
-        phone.dial(Integer.toString(line));
-
-    }
-
-    public void hangUp() {
-        if (onCall) phone.hangUp();
-        onCall = false;
-    }
+	public TestAgent createAgent(int username) {
+		return new TestAgent(username);
+	}
+	
+	public URI getLoginUri() {
+		return loginUri;
+	}
 
 }
